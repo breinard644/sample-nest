@@ -1,11 +1,13 @@
-import { Controller, HttpCode, Post, UseInterceptors } from '@nestjs/common';
+import { Controller, HttpCode, Post, UseGuards, UseInterceptors } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { BooksService } from './books.service';
 import { CacheInterceptor } from '@nestjs/cache-manager';
+import { jwtGuard } from 'src/auth/guard';
 
 @Controller('books')
 @ApiTags()
 @UseInterceptors(CacheInterceptor)
+@UseGuards(jwtGuard)
 export class BooksController {
     constructor(private bookservice:BooksService){}
 

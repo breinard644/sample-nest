@@ -12,19 +12,27 @@ import { url } from 'inspector';
 import { BooksController } from './books/books.controller';
 import { BooksService } from './books/books.service';
 import { BooksModule } from './books/books.module';
+import { TaskserviceModule } from './taskservice/taskservice.module';
 
 @Module({
-  imports: [AuthModule,PrismaModule,ConfigModule.forRoot({isGlobal:true}), UserModule,ScheduleModule.forRoot(), CacheModule.register({
-    isGlobal:true,
-    useFactory: async()=>({
+  imports: [
+    AuthModule, 
+    PrismaModule, 
+    ConfigModule.forRoot({ isGlobal: true }), 
+    UserModule, 
+    CacheModule.register({
+    isGlobal: true,
+    useFactory: async () => ({
       store: await redisStore({
         url: process.env.REDIS_URL,
         host: process.env.REDIS_HOST,
         port: process.env.REDIS_PORT
       })
     })
-  }), BooksModule],
+  }), 
+  BooksModule,
+TaskserviceModule],
   controllers: [AppController, BooksController],
   providers: [AppService, BooksService],
 })
-export class AppModule {}
+export class AppModule { }
