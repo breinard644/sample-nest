@@ -1,6 +1,13 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, UseGuards, UseInterceptors } from '@nestjs/common';
 import { TaskService } from './taskservice.service';
+import { CacheInterceptor } from '@nestjs/cache-manager';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { jwtGuard } from 'src/auth/guard';
 
+@ApiBearerAuth('access-token')
+@ApiTags()
+@UseInterceptors(CacheInterceptor)
+@UseGuards(jwtGuard)
 @Controller('taskservice')
 export class TaskserviceController {
   constructor(private taskService: TaskService) {}
