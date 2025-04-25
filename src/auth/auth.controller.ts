@@ -2,7 +2,7 @@ import { Body, Controller, ForbiddenException, Param, Post, Req, Res, UseGuards 
 import { AuthService } from './auth.service';
 import { AuthDto } from './dto';
 import { dot } from 'node:test/reporters';
-import { ApiParam, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiParam, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';           // ← import from express
 import { GetRefreshToken, GetUser, RtGuard } from './guard/rt.guard';
 
@@ -11,6 +11,7 @@ import { GetRefreshToken, GetUser, RtGuard } from './guard/rt.guard';
 export class AuthController {
   constructor(private authService: AuthService) { }
 
+  @ApiBearerAuth('access-token')
   @UseGuards(RtGuard)
   @Post('refresh')
   async refreshTokens(
@@ -58,7 +59,7 @@ export class AuthController {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: Number(process.env.JWT_EXPIRE) * 1000, // convert to ms
     });
 
     return { access_token: tokens.access_token };

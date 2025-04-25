@@ -1,23 +1,66 @@
-// guard/rt.guard.ts
-import { createParamDecorator, ExecutionContext, Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  ExecutionContext,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { JwtService } from '@nestjs/jwt';
+import { RefreshTokensProvider } from '../provider/refresh-tokens.provider';
 
 @Injectable()
-export class RtGuard extends AuthGuard('jwt-refresh') {} // <– must match strategy name
+export class jwtGuard extends AuthGuard('jwt') {
+  constructor(
+    private jwtService: JwtService,
+    private refreshTokensProvider: RefreshTokensProvider,
+  ) {
+    super();
+  }
 
-// Extract refresh token from request cookies
-export const GetRefreshToken = createParamDecorator(
-  (data: unknown, ctx: ExecutionContext) => {
-    const request = ctx.switchToHttp().getRequest();
-    return request.cookies['refresh_token'];
-  },
-);
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const req = context.switchToHttp().getRequest();
+    const res = context.switchToHttp().getResponse();
 
-// Extract user (from validated JWT)
-export const GetUser = createParamDecorator(
-  (data: keyof any, ctx: ExecutionContext) => {
-    const request = ctx.switchToHttp().getRequest();
-    const user = request.user;
-    return data ? user?.[data] : user;
-  },
-);
+    try {
+      const result = (await super.canActivate(context)) as boolean;
+      return result;
+    } catch (err) {
+      const info = err?.response;
+
+      if (err?.name === 'TokenExpiredError') {
+        const refreshToken = req.cookies?.['refresh_token'];
+        if (!refreshToken) {
+          throw new UnauthorizedException('Refresh token missing');
+        }
+
+        try {
+          const newTokens = await this.refreshTokensProvider.refresh(refreshToken);
+
+          const newPayload = this.jwtService.verify(newTokens.access_token, {
+            secret: process.env.JWT_SECRET,
+          });
+
+          res.cookie('refresh_token', newTokens.refresh_token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+          });
+
+          req.user = newPayload;
+          return true;
+        } catch (refreshErr) {
+          console.error('❌ Failed to refresh token:', refreshErr);
+          throw new UnauthorizedException('Could not refresh token');
+        }
+      }
+
+      throw new UnauthorizedException();
+    }
+  }
+
+  handleRequest(err: any, user: any) {
+    // We won't do anything here since we handle everything in canActivate
+    if (err || !user) throw err || new UnauthorizedException();
+    return user;
+  }
+}

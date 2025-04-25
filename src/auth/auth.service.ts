@@ -8,7 +8,7 @@ import { ConfigService } from '@nestjs/config';
 @Injectable()
 export class AuthService {
 
-  constructor(private prisma: PrismaService, private jwt: JwtService, private config: ConfigService) { }
+  constructor(private prisma: PrismaService, private jwtService: JwtService, private config: ConfigService) { }
 
   async storeRefreshToken(userId: number, refreshToken: string) {
     const hash = await argon.hash(refreshToken);
@@ -81,23 +81,34 @@ export class AuthService {
       email
     }
 
-    const secret = this.config.get('JWT_SECRET');
+    // const secret = this.config.get('JWT_SECRET');
 
-    const token = await this.jwt.signAsync(payload, {
-      expiresIn: process.env.JWT_EXPIRE,
-      secret: secret,
-    })
+    // const token = await this.jwt.signAsync(payload, {
+    //   expiresIn: process.env.JWT_EXPIRE,
+    //   secret: secret,
+    // })
 
-    const refresh_secret = this.config.get('REFRESH_JWT_SECRET');
+    // const refresh_secret = this.config.get('REFRESH_JWT_SECRET');
 
-    const refreshToken = await this.jwt.signAsync(payload, {
-      expiresIn: process.env.REFRESH_JWT_EXPIRE,
-      secret: refresh_secret,
-    })
+    // const refreshToken = await this.jwt.signAsync(payload, {
+    //   expiresIn: process.env.REFRESH_JWT_EXPIRE,
+    //   secret: refresh_secret,
+    // })
+
+    const [access_token, refresh_token] = await Promise.all([
+      this.jwtService.signAsync(payload, {
+        secret: this.config.get('JWT_ACCESS_SECRET'),
+        expiresIn: '15m',
+      }),
+      this.jwtService.signAsync(payload, {
+        secret: this.config.get('JWT_REFRESH_SECRET'),
+        expiresIn: '7d', // Or longer, like '30d'
+      }),
+    ]);
 
     return {
-      access_token: token,
-      refresh_token: refreshToken,
+      access_token: access_token,
+      refresh_token: refresh_token,
     }
   }
 

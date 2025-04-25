@@ -8,17 +8,30 @@ import { UserModule } from './user/user.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { CacheModule } from '@nestjs/cache-manager';
 import { redisStore } from 'cache-manager-redis-store';
-import { url } from 'inspector';
+import { BullModule } from '@nestjs/bullmq';
 import { BooksController } from './books/books.controller';
 import { BooksService } from './books/books.service';
 import { BooksModule } from './books/books.module';
 import { TaskserviceModule } from './taskservice/taskservice.module';
+import { QueueOptions } from 'bullmq';
 
 @Module({
   imports: [
     AuthModule, 
     PrismaModule, 
-    ConfigModule.forRoot({ isGlobal: true }), 
+    ConfigModule.forRoot({ 
+      isGlobal: true,
+     }), 
+     BullModule.forRootAsync({
+      useFactory: async () => ({
+        connection: {
+          host: process.env.REDIS_HOST,
+          port: Number(process.env.REDIS_PORT),
+          password: process.env.REDIS_PASSWORD,
+        },
+      }),
+    }),
+    
     UserModule, 
     CacheModule.register({
     isGlobal: true,
