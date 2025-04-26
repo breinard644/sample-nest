@@ -14,9 +14,8 @@ async function bootstrap() {
     whitelist: true,
     forbidNonWhitelisted: true,
   }));
-
-  app.enableCors();
-
+  app.enableCors({});
+  
   const config = new DocumentBuilder()
   .setTitle('API')
   .setDescription('My API Description')

@@ -4,10 +4,8 @@ import { Response } from 'express';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
 import { getUser } from 'src/auth/decorator/get-user.decorator';
-import { jwtGuard } from 'src/auth/guard';
 
 @ApiBearerAuth('access-token')
-@UseGuards(jwtGuard)
 @ApiTags()
 @UseInterceptors(CacheInterceptor)
 @Controller('user')

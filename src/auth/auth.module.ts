@@ -4,8 +4,6 @@ import { AuthController } from './auth.controller';
 import { PrismaModule } from 'src/prisma/prisma.module';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './strategy/strategy';
-import { jwtGuard } from './guard';
-import { JwtRefreshStrategy } from './strategy/jwt-refresh.strategy';
 import { RefreshTokensProvider } from './provider/refresh-tokens.provider';
 
 @Module({
@@ -16,8 +14,8 @@ import { RefreshTokensProvider } from './provider/refresh-tokens.provider';
     signOptions: { expiresIn: `${process.env.REFRESH_JWT_EXPIRE || 86400}s` },
   }),
   forwardRef(() => AuthModule)],
-  providers: [AuthService,JwtStrategy, jwtGuard,JwtRefreshStrategy, RefreshTokensProvider],
-  exports:[RefreshTokensProvider, jwtGuard,JwtModule],
+  providers: [AuthService,JwtStrategy, RefreshTokensProvider],
+  exports:[RefreshTokensProvider,JwtModule],
   controllers: [AuthController]
 })
 export class AuthModule {}

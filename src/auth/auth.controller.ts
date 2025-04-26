@@ -4,38 +4,14 @@ import { AuthDto } from './dto';
 import { dot } from 'node:test/reporters';
 import { ApiBearerAuth, ApiParam, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';           // ← import from express
-import { GetRefreshToken, GetUser, RtGuard } from './guard/rt.guard';
+
+import { getUser } from './decorator/get-user.decorator';
+// import { GetRefreshToken, GetUser, RtGuard } from './guard/rt.guard';
 
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) { }
-
-  @ApiBearerAuth('access-token')
-  @UseGuards(RtGuard)
-  @Post('refresh')
-  async refreshTokens(
-    @GetUser('sub') userId: number, // Get the user id from the authenticated user
-    @GetRefreshToken() refreshToken: string, // Get refresh token from cookies
-    @Res() res: Response,
-  ) {
-    if (!refreshToken) {
-      throw new ForbiddenException('Refresh token missing2');
-    }
-
-    // Pass the refresh token to the service for validation
-    const newTokens = await this.authService.refreshTokens(userId, refreshToken);
-
-    res.cookie('refresh_token', newTokens.refresh_token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: parseInt(process.env.REFRESH_JWT_EXPIRE || '604800000'), // 7 days
-    });
-
-    return { access_token: newTokens.access_token };
-  }
-
 
   @Post('signup')
   signup(@Body() dto: AuthDto) {
